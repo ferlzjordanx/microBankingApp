@@ -1,0 +1,113 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: mysql
+    command: ["--default-authentication-plugin=mysql_native_password"]
+    environment:
+      MYSQL_ROOT_PASSWORD: "Paco@1357"
+      # optional: create DBs up-front
+      # MYSQL_DATABASE only creates one; we’ll create schemas on connect
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "Paco@1357"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  eureka:
+    build:
+      context: .
+      dockerfile: eureka-server/Dockerfile
+    container_name: eureka
+    ports:
+      - "8761:8761"
+    environment:
+      SPRING_APPLICATION_NAME: eureka-server
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
+      EUREKA_CLIENT_FETCH_REGISTRY: "false"
+
+  account-service:
+    build:
+      context: .
+      dockerfile: account-service/Dockerfile
+    container_name: account-service
+    depends_on:
+      - mysql
+      - eureka
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_APPLICATION_NAME: account-service
+      SERVER_PORT: "8081"
+      # DB (override localhost in your properties)
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/account_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8"
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: "Paco@1357"
+      # Eureka in docker
+      EUREKA_CLIENT_ENABLED: "true"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: "http://eureka:8761/eureka"
+      EUREKA_INSTANCE_INSTANCE_ID: "account-service:8081"
+
+  transaction-service:
+    build:
+      context: .
+      dockerfile: transaction-service/Dockerfile
+    container_name: transaction-service
+    depends_on:
+      - mysql
+      - eureka
+      - account-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_APPLICATION_NAME: transaction-service
+      SERVER_PORT: "8083"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/txn_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8"
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: "Paco@1357"
+      EUREKA_CLIENT_ENABLED: "true"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: "http://eureka:8761/eureka"
+      EUREKA_INSTANCE_INSTANCE_ID: "transaction-service:8083"
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: auth-service
+    depends_on:
+      - mysql
+      - eureka
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_APPLICATION_NAME: auth-service
+      SERVER_PORT: "8082"
+      # If auth-service uses a DB, wire it here. You can share account_db or create auth_db:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/auth_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8"
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: "Paco@1357"
+      EUREKA_CLIENT_ENABLED: "true"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: "http://eureka:8761/eureka"
+      EUREKA_INSTANCE_INSTANCE_ID: "auth-service:8082"
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    depends_on:
+      - eureka
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_APPLICATION_NAME: api-gateway
+      SERVER_PORT: "8080"
+      EUREKA_CLIENT_ENABLED: "true"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: "http://eureka:8761/eureka"
+      EUREKA_INSTANCE_INSTANCE_ID: "api-gateway:8080"
+
+volumes:
+  mysql_data:
