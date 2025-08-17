@@ -1,0 +1,67 @@
+# ===== Maven / Build =====
+**/target/
+**/out/
+**/build/
+**/surefire-reports/
+**/failsafe-reports/
+**/jacoco.exec
+**/jacoco-report/
+**/site/
+
+# ===== Logs =====
+*.log
+**/logs/
+spring.log
+
+# ===== IDEs =====
+# IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# VS Code
+.vscode/
+
+# ===== OS cruft =====
+.DS_Store
+Thumbs.db
+
+# ===== Docker / Env / Local data =====
+.env
+*.env
+*.env.local
+docker-data/
+mysql_data/
+kafka_data/
+zookeeper_data/
+
+# Keep example configs but ignore local/secret overrides
+*.local.properties
+*.local.yml
+*.secret.properties
+*.secret.yml
+
+# ===== (Optional) Node (if you add a frontend later) =====
+**/node_modules/
+**/dist/
+
+# ===== Docs for project =====
+
+/resources/
